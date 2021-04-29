@@ -1,19 +1,15 @@
 package httpClient;
 
-import lombok.extern.java.Log;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Slf4j
-public class OldFileMove {
+public class HttpClientUtils {
 
-    private static final int TIME_OUT = 8 * 1000;                          //超时时间
+    private static final int TIME_OUT = 60 * 1000;                          //超时时间
     private static final String CHARSET = "utf-8";                         //编码格式
     private static final String PREFIX = "--";                            //前缀
     private static final String BOUNDARY = "****" + UUID.randomUUID().toString() + "****";  //边界标识 随机生成
@@ -22,16 +18,14 @@ public class OldFileMove {
 
     /**
      * post 请求
-     * @param strParams
-     * @param fileParams
+     * @param myRequest
      */
-    public static void postRequest(final Map<String, String> strParams, final Map<String, File> fileParams) {
+    public static void postRequest(MyRequest myRequest, URL url, ConcurrentLinkedQueue<MyResponse> reponseQueue) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 HttpURLConnection conn = null;
                 try {
-                    URL url = new URL(requestUrl);
                     conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setReadTimeout(TIME_OUT);
@@ -49,12 +43,12 @@ public class OldFileMove {
                     //上传参数
                     DataOutputStream dos = new DataOutputStream(conn.getOutputStream());
                     //getStrParams()为一个
-                    dos.writeBytes( getStrParams(strParams).toString() );
+                    dos.writeBytes( getStrParams(myRequest.strParams).toString() );
                     dos.flush();
 
                     //文件上传
                     StringBuilder fileSb = new StringBuilder();
-                    for (Map.Entry<String, File> fileEntry: fileParams.entrySet()){
+                    for (Map.Entry<String, File> fileEntry: myRequest.fileParams.entrySet()){
                         fileSb.append(PREFIX)
                                 .append(BOUNDARY)
                                 .append(LINE_END)
@@ -64,7 +58,7 @@ public class OldFileMove {
                                  */
                                 .append("Content-Disposition: form-data; name=\"file\"; filename=\""
                                         + fileEntry.getKey() + "\"" + LINE_END)
-                                .append("Content-Type: image/jpg" + LINE_END) //此处的ContentType不同于 请求头 中Content-Type
+                                .append("Content-Type: application/octet-stream" + LINE_END) //此处的ContentType不同于 请求头 中Content-Type
                                 .append("Content-Transfer-Encoding: 8bit" + LINE_END)
                                 .append(LINE_END);// 参数头设置完以后需要两个换行，然后才是参数内容
                         dos.writeBytes(fileSb.toString());
@@ -82,7 +76,7 @@ public class OldFileMove {
                     dos.writeBytes(PREFIX + BOUNDARY + PREFIX + LINE_END);
                     dos.flush();
                     dos.close();
-                    log.info( "postResponseCode() = "+conn.getResponseCode() );
+                    // log( "postResponseCode() = "+conn.getResponseCode() );
                     //读取服务器返回信息
                     if (conn.getResponseCode() == 200) {
                         InputStream in = conn.getInputStream();
@@ -92,7 +86,8 @@ public class OldFileMove {
                         while ((line = reader.readLine()) != null) {
                             response.append(line);
                         }
-                        (TAG, "run: " + response);
+                        System.out.println(response);
+                        reponseQueue.add(new MyResponse(myRequest, response.toString()));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
