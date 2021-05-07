@@ -1,4 +1,4 @@
-package httpClient;
+package com.zhanghao.httpClient;
 
 
 import com.alibaba.fastjson.JSON;

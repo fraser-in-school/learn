@@ -1,4 +1,4 @@
-package httpClient;
+package com.zhanghao.httpClient;
 
 import java.io.File;
 import java.util.Map;

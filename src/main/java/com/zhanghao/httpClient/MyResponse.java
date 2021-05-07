@@ -1,4 +1,4 @@
-package httpClient;
+package com.zhanghao.httpClient;
 
 /**
  * @author zhanghao88

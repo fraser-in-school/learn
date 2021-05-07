@@ -1,4 +1,4 @@
-package httpClient;
+package com.zhanghao.httpClient;
 
 import java.io.*;
 import java.net.HttpURLConnection;
